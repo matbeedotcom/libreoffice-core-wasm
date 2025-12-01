@@ -1,3 +1,4 @@
+#include <config_wasm_strip.h>
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
  * This file is part of the LibreOffice project.
@@ -205,7 +206,9 @@ void AnnotationTextWindow::SetDrawingArea(weld::DrawingArea* pDrawingArea)
 
     pDrawingArea->set_cursor(PointerStyle::Text);
 
+#if !ENABLE_WASM_STRIP_ACCESSIBILITY
     InitAccessible();
+#endif
 }
 
 // see SwAnnotationWin in sw for something similar

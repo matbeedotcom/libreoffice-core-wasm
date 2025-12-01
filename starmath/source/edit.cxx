@@ -1,3 +1,4 @@
+#include <config_wasm_strip.h>
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
  * This file is part of the LibreOffice project.
@@ -125,7 +126,9 @@ void SmEditTextWindow::SetDrawingArea(weld::DrawingArea* pDrawingArea)
 
     pEditEngine->SetStatusEventHdl(LINK(this, SmEditTextWindow, EditStatusHdl));
 
+#if !ENABLE_WASM_STRIP_ACCESSIBILITY
     InitAccessible();
+#endif
 
     //Apply zoom to smeditwindow text
     if(GetEditView())

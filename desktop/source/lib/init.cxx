@@ -134,7 +134,7 @@
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 
 #include <editeng/flstitem.hxx>
-#ifdef IOS
+#if defined(IOS) || defined(__EMSCRIPTEN__)
 #include <sfx2/app.hxx>
 #endif
 #include <sfx2/objsh.hxx>
@@ -7912,7 +7912,15 @@ static int lo_initialize(LibreOfficeKit* pThis, const char* pAppPath, const char
 
     // Did we do a pre-initialize
     static bool bPreInited = false;
+#ifdef __EMSCRIPTEN__
+    // Force unipoll mode for Emscripten/WASM builds.
+    // With PROXY_TO_PTHREAD=1, main() already runs on a pthread worker.
+    // Creating additional threads with osl_createThread causes conflicts.
+    // Unipoll mode keeps everything on the same thread, avoiding the issue.
+    static bool bUnipoll = true;
+#else
     static bool bUnipoll = false;
+#endif
     static bool bProfileZones = false;
     static bool bNotebookbar = false;
 
@@ -8210,7 +8218,13 @@ static int lo_initialize(LibreOfficeKit* pThis, const char* pAppPath, const char
                 SAL_INFO("lok", "RequestHandler ready -- continuing");
             }
             else
+            {
+                // Unipoll mode: Initialize VCL and SfxApplication directly
+                // without running the full soffice_main event loop.
+                SAL_INFO("lok", "Unipoll mode: InitVCL + SfxApplication");
                 InitVCL();
+                SfxApplication::GetOrCreate();
+            }
         }
 
         if (eStage != SECOND_INIT)
@@ -8274,23 +8288,31 @@ static int lo_initialize(LibreOfficeKit* pThis, const char* pAppPath, const char
 SAL_JNI_EXPORT
 LibreOfficeKit *libreofficekit_hook_2(const char* install_path, const char* user_profile_url)
 {
+    SAL_INFO("lok.shim", "libreofficekit_hook_2('" << (install_path ? install_path : "(null)")
+             << "','" << (user_profile_url ? user_profile_url : "(null)") << "')");
+
     static bool alreadyCalled = false;
 
     if ((!lok_preinit_2_called && !gImpl) || (lok_preinit_2_called && !alreadyCalled))
     {
+        SAL_INFO("lok.shim", "hook_2: calling lo_initialize, gImpl=" << gImpl
+                 << ", lok_preinit_2_called=" << lok_preinit_2_called);
         alreadyCalled = true;
 
         if (!lok_preinit_2_called)
         {
-            SAL_INFO("lok", "Create libreoffice object");
+            SAL_INFO("lok.shim", "hook_2: constructing LibLibreOffice_Impl");
             gImpl = new LibLibreOffice_Impl();
         }
 
         if (!lo_initialize(gImpl, install_path, user_profile_url))
         {
+            SAL_WARN("lok.shim", "hook_2: lo_initialize failed, calling lo_destroy");
             lo_destroy(gImpl);
         }
     }
+
+    SAL_INFO("lok.shim", "hook_2 returns gImpl=" << gImpl);
     return static_cast<LibreOfficeKit*>(gImpl);
 }
 
@@ -8351,6 +8373,135 @@ static void lo_destroy(LibreOfficeKit* pThis)
     SAL_INFO("lok", "LO Destroy Done");
 }
 
+// WASM shims for LibreOfficeKit vtable calls
+// These provide stable exports that don't require vtable traversal from JS
+
+SAL_JNI_EXPORT
+LibreOfficeKitDocument* lok_documentLoad(LibreOfficeKit* pKit, const char* pPath)
+{
+    SAL_INFO("lok.shim", "lok_documentLoad(" << pKit << ",'" << (pPath ? pPath : "(null)") << "')");
+
+    if (!pKit)
+    {
+        SAL_WARN("lok.shim", "lok_documentLoad: pKit is null");
+        return nullptr;
+    }
+    if (!pKit->pClass)
+    {
+        SAL_WARN("lok.shim", "lok_documentLoad: pKit->pClass is null");
+        return nullptr;
+    }
+    if (!pKit->pClass->documentLoad)
+    {
+        SAL_WARN("lok.shim", "lok_documentLoad: documentLoad pointer is null");
+        return nullptr;
+    }
+
+    LibreOfficeKitDocument* pDoc = pKit->pClass->documentLoad(pKit, pPath);
+    SAL_INFO("lok.shim", "lok_documentLoad done, doc=" << pDoc);
+    return pDoc;
+}
+
+SAL_JNI_EXPORT
+LibreOfficeKitDocument* lok_documentLoadWithOptions(LibreOfficeKit* pKit,
+                                                     const char* pPath,
+                                                     const char* pOptions)
+{
+    SAL_INFO("lok.shim", "lok_documentLoadWithOptions(" << pKit << ",'"
+             << (pPath ? pPath : "(null)") << "','" << (pOptions ? pOptions : "(null)") << "')");
+
+    if (!pKit || !pKit->pClass || !pKit->pClass->documentLoadWithOptions)
+    {
+        SAL_WARN("lok.shim", "lok_documentLoadWithOptions: invalid kit or function pointer");
+        return nullptr;
+    }
+
+    LibreOfficeKitDocument* pDoc = pKit->pClass->documentLoadWithOptions(pKit, pPath, pOptions);
+    SAL_INFO("lok.shim", "lok_documentLoadWithOptions done, doc=" << pDoc);
+    return pDoc;
+}
+
+SAL_JNI_EXPORT
+int lok_documentSaveAs(LibreOfficeKitDocument* pDoc,
+                       const char* pUrl,
+                       const char* pFormat,
+                       const char* pFilterOptions)
+{
+    SAL_INFO("lok.shim", "lok_documentSaveAs(" << pDoc << ",'" << (pUrl ? pUrl : "(null)")
+             << "','" << (pFormat ? pFormat : "(null)")
+             << "','" << (pFilterOptions ? pFilterOptions : "(null)") << "')");
+
+    if (!pDoc)
+    {
+        SAL_WARN("lok.shim", "lok_documentSaveAs: pDoc is null");
+        return 0;
+    }
+    if (!pDoc->pClass)
+    {
+        SAL_WARN("lok.shim", "lok_documentSaveAs: pDoc->pClass is null");
+        return 0;
+    }
+    if (!pDoc->pClass->saveAs)
+    {
+        SAL_WARN("lok.shim", "lok_documentSaveAs: saveAs pointer is null");
+        return 0;
+    }
+
+    int ret = pDoc->pClass->saveAs(pDoc, pUrl, pFormat, pFilterOptions);
+    SAL_INFO("lok.shim", "lok_documentSaveAs ret=" << ret);
+    return ret;
+}
+
+SAL_JNI_EXPORT
+void lok_documentDestroy(LibreOfficeKitDocument* pDoc)
+{
+    SAL_INFO("lok.shim", "lok_documentDestroy(" << pDoc << ")");
+
+    if (!pDoc)
+    {
+        SAL_WARN("lok.shim", "lok_documentDestroy: pDoc is null");
+        return;
+    }
+    if (!pDoc->pClass || !pDoc->pClass->destroy)
+    {
+        SAL_WARN("lok.shim", "lok_documentDestroy: invalid pClass or destroy pointer");
+        return;
+    }
+
+    pDoc->pClass->destroy(pDoc);
+    SAL_INFO("lok.shim", "lok_documentDestroy done");
+}
+
+SAL_JNI_EXPORT
+const char* lok_getError(LibreOfficeKit* pKit)
+{
+    SAL_INFO("lok.shim", "lok_getError(" << pKit << ")");
+
+    if (!pKit || !pKit->pClass || !pKit->pClass->getError)
+    {
+        SAL_WARN("lok.shim", "lok_getError: invalid kit or function pointer");
+        return nullptr;
+    }
+
+    const char* err = pKit->pClass->getError(pKit);
+    SAL_INFO("lok.shim", "lok_getError returns: '" << (err ? err : "(null)") << "'");
+    return err;
+}
+
+SAL_JNI_EXPORT
+void lok_destroy(LibreOfficeKit* pKit)
+{
+    SAL_INFO("lok.shim", "lok_destroy(" << pKit << ")");
+
+    if (!pKit)
+    {
+        SAL_WARN("lok.shim", "lok_destroy: pKit is null");
+        return;
+    }
+
+    lo_destroy(pKit);
+    SAL_INFO("lok.shim", "lok_destroy done");
+}
 } // extern "C"
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

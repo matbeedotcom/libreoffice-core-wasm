@@ -1200,7 +1200,7 @@ emscripten)
     enable_compiler_plugins=no
     enable_customtarget_components=yes
     enable_split_debug=yes
-    enable_wasm_strip=yes
+    test -z "$enable_wasm_strip" && enable_wasm_strip=yes
     with_system_zlib=no
     with_theme="colibre"
     _os=Emscripten
@@ -3200,7 +3200,7 @@ if test "$enable_wasm_strip" = "yes"; then
     enable_odk=no
     enable_online_update=no
     enable_opencl=no
-    enable_pdfimport=no
+    # enable_pdfimport preserved for WASM PDF support
     enable_randr=no
     enable_report_builder=no
     enable_scripting=no
@@ -4123,6 +4123,16 @@ AC_SUBST(CROSS_COMPILING)
 AC_SUBST(ENABLE_WASM_STRIP)
 AC_SUBST(ENABLE_WASM_STRIP_WRITER)
 AC_SUBST(ENABLE_WASM_STRIP_CALC)
+# Set ENABLE_WASM_STRIP_BASIC_DRAW_MATH_IMPRESS based on main-module
+if test "$enable_wasm_strip" = "yes" -a "$with_main_module" != "all"; then
+    ENABLE_WASM_STRIP_BASIC_DRAW_MATH_IMPRESS=TRUE
+fi
+AC_SUBST(ENABLE_WASM_STRIP_BASIC_DRAW_MATH_IMPRESS)
+# Set ENABLE_WASM_STRIP_CANVAS based on main-module (Impress needs canvas)
+if test "$enable_wasm_strip" = "yes" -a "$with_main_module" != "all"; then
+    ENABLE_WASM_STRIP_CANVAS=TRUE
+fi
+AC_SUBST(ENABLE_WASM_STRIP_CANVAS)
 
 # Use -isystem (gcc) if possible, to avoid warnings in 3rd party headers.
 # NOTE: must _not_ be used for bundled external libraries!

@@ -135,6 +135,12 @@ std::size_t ThreadPool::getPreferredConcurrency()
 {
     static std::size_t ThreadCount = []()
     {
+#ifdef __EMSCRIPTEN__
+        // Force single-threaded mode for WASM to avoid deadlocks when
+        // spawning new threads during rendering (Chromium pthread limitation)
+        SAL_INFO("comphelper.threadpool", "WASM build: forcing single-threaded mode");
+        return std::size_t(1);
+#else
         const std::size_t nHardThreads = o3tl::clamp_to_unsigned<std::size_t>(
             std::max(std::thread::hardware_concurrency(), 1U));
         std::size_t nThreads = nHardThreads;
@@ -147,6 +153,7 @@ std::size_t ThreadPool::getPreferredConcurrency()
 
         nThreads = std::min(nHardThreads, nThreads);
         return std::max<std::size_t>(nThreads, 1);
+#endif
     }();
 
     return ThreadCount;
@@ -296,6 +303,24 @@ void ThreadPool::joinThreadsIfIdle()
     {
         shutdownLocked(aGuard);
     }
+}
+
+void ThreadPool::preSpawnWorkers()
+{
+    std::scoped_lock< std::mutex > aGuard( maMutex );
+
+    SAL_INFO("comphelper.threadpool", "preSpawnWorkers: spawning " << mnMaxWorkers << " workers");
+
+    mbTerminate = false;
+
+    // Spawn all workers up to the maximum
+    while (maWorkers.size() < mnMaxWorkers)
+    {
+        maWorkers.push_back( new ThreadWorker( this ) );
+        maWorkers.back()->launch();
+    }
+
+    SAL_INFO("comphelper.threadpool", "preSpawnWorkers: spawned " << maWorkers.size() << " workers");
 }
 
 std::shared_ptr<ThreadTaskTag> ThreadPool::createThreadTaskTag()

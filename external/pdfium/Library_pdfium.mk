@@ -714,7 +714,8 @@ $(eval $(call gb_Library_add_generated_exception_objects,pdfium,\
 ))
 endif
 
-ifeq ($(OS),LINUX)
+ifneq (,$(filter LINUX EMSCRIPTEN,$(OS)))
+# EMSCRIPTEN uses Linux platform impl (fx_linux_impl.cpp supports OS_ASMJS)
 # fxge
 $(eval $(call gb_Library_add_generated_exception_objects,pdfium,\
     UnpackedTarball/pdfium/core/fxge/linux/fx_linux_impl \

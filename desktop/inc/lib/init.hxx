@@ -110,6 +110,11 @@ namespace desktop {
         /// Returns true iff callbacks are disabled.
         bool callbacksDisabled() const { return m_nDisableCallbacks != 0; }
 
+#ifdef __EMSCRIPTEN__
+        /// Force flush pending callbacks (for WASM where PostUserEvent doesn't work)
+        DESKTOP_DLLPUBLIC void flush() { invoke(); }
+#endif
+
         void addViewStates(int viewId);
         void removeViewStates(int viewId);
 

@@ -194,10 +194,9 @@ void SfxLokHelper::setView(int nId)
     DisableCallbacks dc;
 
     bool bIsCurrShell = (pViewShell == SfxViewShell::Current());
-    if (bIsCurrShell && comphelper::LibreOfficeKit::getLanguageTag().getBcp47() == pViewShell->GetLOKLanguageTag().getBcp47())
-        return;
+    bool bLanguageMatch = comphelper::LibreOfficeKit::getLanguageTag().getBcp47() == pViewShell->GetLOKLanguageTag().getBcp47();
 
-    if (bIsCurrShell)
+    if (bIsCurrShell && !bLanguageMatch)
     {
         // If we wanted to set the SfxViewShell that is actually set, we could skip it.
         // But it looks like that the language can go wrong, so we have to fix that.
@@ -211,13 +210,17 @@ void SfxLokHelper::setView(int nId)
     comphelper::LibreOfficeKit::setLanguageTag(pViewShell->GetLOKLanguageTag());
     comphelper::LibreOfficeKit::setLocale(pViewShell->GetLOKLocale());
 
-    if (bIsCurrShell)
-        return;
-
     SfxViewFrame& rViewFrame = pViewShell->GetViewFrame();
-    rViewFrame.MakeActive_Impl(false);
 
-    // Make comphelper::dispatchCommand() find the correct frame.
+    if (!bIsCurrShell)
+    {
+        rViewFrame.MakeActive_Impl(false);
+    }
+
+    // Always ensure the desktop knows about the active frame.
+    // This is needed for comphelper::dispatchCommand() to find the correct frame,
+    // especially in headless/WASM mode where the frame may not be set as active
+    // during initial document load.
     uno::Reference<frame::XFrame> xFrame = rViewFrame.GetFrame().GetFrameInterface();
     uno::Reference<frame::XDesktop2> xDesktop = frame::Desktop::create(comphelper::getProcessComponentContext());
     xDesktop->setActiveFrame(xFrame);

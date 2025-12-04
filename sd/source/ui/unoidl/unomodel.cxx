@@ -2270,9 +2270,16 @@ void SdXImpressDocument::paintTile( VirtualDevice& rDevice,
                             int nTilePosX, int nTilePosY,
                             ::tools::Long nTileWidth, ::tools::Long nTileHeight )
 {
+    SAL_INFO("sd.lok", "SdXImpressDocument::paintTile ENTER");
+
     DrawViewShell* pViewSh = GetViewShell();
     if (!pViewSh)
+    {
+        SAL_WARN("sd.lok", "SdXImpressDocument::paintTile: no ViewShell!");
         return;
+    }
+
+    SAL_INFO("sd.lok", "SdXImpressDocument::paintTile: got ViewShell");
 
     // we need to skip tile invalidation for controls on rendering
     comphelper::LibreOfficeKit::setTiledPainting(true);
@@ -2334,7 +2341,11 @@ void SdXImpressDocument::paintTile( VirtualDevice& rDevice,
     if (comphelper::LibreOfficeKit::isActive())
         pView->SetPaintTextEdit(mbPaintTextEdit);
 
+    SAL_INFO("sd.lok", "SdXImpressDocument::paintTile: about to call CompleteRedraw");
+
     pViewSh->GetView()->CompleteRedraw(&rDevice, vcl::Region(aRect));
+
+    SAL_INFO("sd.lok", "SdXImpressDocument::paintTile: CompleteRedraw RETURNED");
 
     if (comphelper::LibreOfficeKit::isActive())
         pView->SetPaintTextEdit(true);
@@ -2360,6 +2371,8 @@ void SdXImpressDocument::paintTile( VirtualDevice& rDevice,
     }
 
     comphelper::LibreOfficeKit::setTiledPainting(false);
+
+    SAL_INFO("sd.lok", "SdXImpressDocument::paintTile DONE");
 }
 
 OString SdXImpressDocument::getViewRenderState(SfxViewShell* pViewShell)

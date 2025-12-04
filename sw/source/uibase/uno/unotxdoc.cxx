@@ -3260,12 +3260,21 @@ void SwXTextDocument::paintTile( VirtualDevice &rDevice,
                                  int nTilePosX, int nTilePosY,
                                  tools::Long nTileWidth, tools::Long nTileHeight )
 {
+    SAL_INFO("sw.lok", "SwXTextDocument::paintTile ENTER");
+
     SwViewShell* pViewShell = m_pDocShell->GetWrtShell();
+
+    SAL_INFO("sw.lok", "SwXTextDocument::paintTile: about to call PaintTile");
+
     pViewShell->PaintTile(rDevice, nOutputWidth, nOutputHeight,
                           nTilePosX, nTilePosY, nTileWidth, nTileHeight);
 
+    SAL_INFO("sw.lok", "SwXTextDocument::paintTile: PaintTile RETURNED");
+
     LokChartHelper::PaintAllChartsOnTile(rDevice, nOutputWidth, nOutputHeight,
                                          nTilePosX, nTilePosY, nTileWidth, nTileHeight);
+
+    SAL_INFO("sw.lok", "SwXTextDocument::paintTile: ChartHelper done");
 
     // Draw Form controls
     comphelper::LibreOfficeKit::setTiledPainting(true);
@@ -3277,6 +3286,8 @@ void SwXTextDocument::paintTile( VirtualDevice &rDevice,
     Size aOutputSize(nOutputWidth, nOutputHeight);
     LokControlHandler::paintControlTile(pPage, pDrawView, rEditWin, rDevice, aOutputSize, aTileRect);
     comphelper::LibreOfficeKit::setTiledPainting(false);
+
+    SAL_INFO("sw.lok", "SwXTextDocument::paintTile DONE");
 }
 
 Size SwXTextDocument::getDocumentSize()
@@ -3740,11 +3751,20 @@ VclPtr<vcl::Window> SwXTextDocument::getDocWindow()
     SolarMutexGuard aGuard;
     SwView* pView = m_pDocShell->GetView();
     if (!pView)
+    {
+        SAL_WARN("lok.writer", "getDocWindow: GetView() returned null - no SwView available!");
         return {};
+    }
+
+    SAL_WARN("lok.writer", "getDocWindow: pView is valid");
 
     if (VclPtr<vcl::Window> pWindow = SfxLokHelper::getInPlaceDocWindow(pView))
+    {
+        SAL_WARN("lok.writer", "getDocWindow: returning InPlaceDocWindow");
         return pWindow;
+    }
 
+    SAL_WARN("lok.writer", "getDocWindow: returning EditWin");
     return &(pView->GetEditWin());
 }
 
@@ -3864,18 +3884,33 @@ void SwXTextDocument::initializeForTiledRendering(const css::uno::Sequence<css::
 void SwXTextDocument::postKeyEvent(int nType, int nCharCode, int nKeyCode)
 {
     SolarMutexGuard aGuard;
-    SfxLokHelper::postKeyEventAsync(getDocWindow(), nType, nCharCode, nKeyCode);
+    SAL_WARN("lok.writer", "postKeyEvent: called with type=" << nType << " charCode=" << nCharCode << " keyCode=" << nKeyCode);
+    VclPtr<vcl::Window> pWindow = getDocWindow();
+    if (!pWindow)
+    {
+        SAL_WARN("lok.writer", "postKeyEvent: getDocWindow() returned null - key event will be lost!");
+    }
+    else
+    {
+        SAL_WARN("lok.writer", "postKeyEvent: window is valid, posting key event");
+    }
+    SfxLokHelper::postKeyEventAsync(pWindow, nType, nCharCode, nKeyCode);
 }
 
 void SwXTextDocument::postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons, int nModifier)
 {
     SolarMutexGuard aGuard;
 
+    SAL_WARN("lok.writer", "postMouseEvent: called with type=" << nType << " x=" << nX << " y=" << nY);
+
     SwViewShell* pWrtViewShell = m_pDocShell->GetWrtShell();
     if (!pWrtViewShell)
     {
+        SAL_WARN("lok.writer", "postMouseEvent: GetWrtShell() returned null - no SwWrtShell available!");
         return;
     }
+
+    SAL_WARN("lok.writer", "postMouseEvent: pWrtViewShell is valid, proceeding");
 
     SwViewOption aOption(*(pWrtViewShell->GetViewOptions()));
     double fScale = aOption.GetZoom() / o3tl::convert(100.0, o3tl::Length::px, o3tl::Length::twip);

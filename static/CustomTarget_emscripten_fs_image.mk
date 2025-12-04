@@ -1795,9 +1795,9 @@ $(emscripten_fontconfig_cache_stamp): \
 $(call gb_CustomTarget_get_target,static/emscripten_fs_image): \
     $(emscripten_fs_image_WORKDIR)/soffice.data \
     $(emscripten_fs_image_WORKDIR)/soffice.data.js.link \
-    $(emscripten_fs_image_WORKDIR)/soffice.data.js.metadata \
 
-$(emscripten_fs_image_WORKDIR)/soffice.data $(emscripten_fs_image_WORKDIR)/soffice.data.js : $(emscripten_fs_image_WORKDIR)/soffice.data.js.metadata
+# soffice.data is generated alongside soffice.data.js by the file packager
+$(emscripten_fs_image_WORKDIR)/soffice.data: $(emscripten_fs_image_WORKDIR)/soffice.data.js
 
 .PRECIOUS: $(emscripten_fs_image_WORKDIR)/soffice.data.js.link
 $(emscripten_fs_image_WORKDIR)/soffice.data.js.link: $(emscripten_fs_image_WORKDIR)/soffice.data.js
@@ -1826,10 +1826,11 @@ $(emscripten_fs_image_WORKDIR)/soffice.data.filelist: \
 
 # Unfortunately the file packager just allows a cmdline file list, but all paths are
 # relative to $(BUILDDIR), so we won't run out of cmdline space that fast...
-$(emscripten_fs_image_WORKDIR)/soffice.data.js.metadata: $(emscripten_fs_image_WORKDIR)/soffice.data.filelist
+# Note: --separate-metadata removed - metadata is now embedded in soffice.data.js
+$(emscripten_fs_image_WORKDIR)/soffice.data.js: $(emscripten_fs_image_WORKDIR)/soffice.data.filelist
 	$(call gb_Output_announce,$(subst $(BUILDDIR)/,,$(emscripten_fs_image_WORKDIR)/soffice.data),$(true),GEN,2)
 	cd $(BUILDDIR) && \
-	$(EMSDK_FILE_PACKAGER) $(emscripten_fs_image_WORKDIR)/soffice.data --preload $(shell cat $^) --js-output=$(emscripten_fs_image_WORKDIR)/soffice.data.js --separate-metadata \
-	    || rm -f $(emscripten_fs_image_WORKDIR)/soffice.data.js $(emscripten_fs_image_WORKDIR)/soffice.data $(emscripten_fs_image_WORKDIR)/soffice.data.js.metadata
+	$(EMSDK_FILE_PACKAGER) $(emscripten_fs_image_WORKDIR)/soffice.data --preload $(shell cat $^) --js-output=$(emscripten_fs_image_WORKDIR)/soffice.data.js \
+	    || rm -f $(emscripten_fs_image_WORKDIR)/soffice.data.js $(emscripten_fs_image_WORKDIR)/soffice.data
 
 # vim: set noet sw=4:

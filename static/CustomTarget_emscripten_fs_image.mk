@@ -1777,7 +1777,11 @@ emscripten_fs_image_WORKDIR := $(gb_CustomTarget_workdir)/static/emscripten_fs_i
 
 # Generate fontconfig cache before packaging soffice.data
 # This avoids runtime font scanning which causes many FS open calls
-# fc-cache -y uses INSTROOT as sysroot so paths like /instdir/share/fonts resolve correctly
+#
+# fontconfig is built with paths like /share/fonts (without /instdir prefix).
+# fc-cache uses -y $(INSTROOT) as sysroot, so /share/fonts resolves to $(INSTROOT)/share/fonts.
+# Cache files store paths as /share/fonts/... which at runtime, with FcConfigSetSysRoot("/instdir"),
+# resolve to /instdir/share/fonts/...
 emscripten_fontconfig_cache_dir := $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/cache
 emscripten_fontconfig_cache_stamp := $(emscripten_fs_image_WORKDIR)/fontconfig_cache.stamp
 
@@ -1787,8 +1791,9 @@ $(emscripten_fontconfig_cache_stamp): \
 		| $(emscripten_fs_image_WORKDIR)/.dir
 	$(call gb_Output_announce,fontconfig cache,$(true),FCC,2)
 	mkdir -p $(emscripten_fontconfig_cache_dir)
-	FONTCONFIG_PATH=$(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig \
-		fc-cache -f -s -v -y $(INSTROOT) $(emscripten_fontconfig_cache_dir)
+	fc-cache -f -s -v -y $(INSTROOT)
+	@echo "Fontconfig cache generated. Verifying..."
+	@ls -la $(emscripten_fontconfig_cache_dir)/ || echo "Warning: cache directory may be empty"
 	touch $@
 
 # we just need data.js.link at link time, which is equal to soffice.data.js

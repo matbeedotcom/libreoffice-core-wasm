@@ -184,6 +184,12 @@ FontCfgWrapper::FontCfgWrapper()
     : m_pFontSet(nullptr)
     , m_bRestrictFontSetToApplicationFonts(false)
 {
+#ifdef __EMSCRIPTEN__
+    // For WASM builds, fontconfig is configured with paths like /share/fonts.
+    // Set sysroot to /instdir so these paths resolve to /instdir/share/fonts
+    // which matches the WASM virtual filesystem layout.
+    FcConfigSetSysRoot(nullptr, reinterpret_cast<const FcChar8*>("/instdir"));
+#endif
     FcInit();
 }
 

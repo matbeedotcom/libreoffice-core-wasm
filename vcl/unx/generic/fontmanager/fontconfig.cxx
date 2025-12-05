@@ -188,9 +188,26 @@ FontCfgWrapper::FontCfgWrapper()
     // For WASM builds, fontconfig is configured with paths like /share/fonts.
     // Set sysroot to /instdir so these paths resolve to /instdir/share/fonts
     // which matches the WASM virtual filesystem layout.
+    SAL_INFO("vcl.fonts", "EMSCRIPTEN: Setting fontconfig sysroot to /instdir");
     FcConfigSetSysRoot(nullptr, reinterpret_cast<const FcChar8*>("/instdir"));
 #endif
     FcInit();
+#ifdef __EMSCRIPTEN__
+    FcConfig* pConfig = FcConfigGetCurrent();
+    if (pConfig)
+    {
+        FcStrList* pDirs = FcConfigGetFontDirs(pConfig);
+        if (pDirs)
+        {
+            FcChar8* pDir;
+            while ((pDir = FcStrListNext(pDirs)) != nullptr)
+            {
+                SAL_INFO("vcl.fonts", "EMSCRIPTEN: Font dir: " << reinterpret_cast<const char*>(pDir));
+            }
+            FcStrListDone(pDirs);
+        }
+    }
+#endif
 }
 
 #ifndef FC_FONT_WRAPPER

@@ -1827,7 +1827,7 @@ $(emscripten_fs_image_WORKDIR)/soffice.data.filelist: \
 	$(file >$@,\
 	    $(subst @,@@,$(subst $(BUILDDIR)/,,$(filter $(BUILDDIR)%,$(gb_emscripten_fs_image_all_files)))) \
 	    $(foreach item,$(filter-out $(BUILDDIR)%,$(gb_emscripten_fs_image_all_files)),$(subst @,@@,$(item))@$(subst @,@@,$(subst $(SRCDIR)/,,$(item)))) \
-	    $(foreach cache_file,$(wildcard $(emscripten_fontconfig_cache_dir)/*),$(subst @,@@,$(cache_file))@$(subst @,@@,$(subst $(INSTROOT)/,,$(cache_file)))))
+	    $(foreach cache_file,$(wildcard $(emscripten_fontconfig_cache_dir)/*),$(subst @,@@,$(cache_file))@instdir/$(subst @,@@,$(subst $(INSTROOT)/,,$(cache_file)))))
 
 # Unfortunately the file packager just allows a cmdline file list, but all paths are
 # relative to $(BUILDDIR), so we won't run out of cmdline space that fast...

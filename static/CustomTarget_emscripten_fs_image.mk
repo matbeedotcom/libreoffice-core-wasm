@@ -1791,7 +1791,9 @@ $(emscripten_fontconfig_cache_stamp): \
 		| $(emscripten_fs_image_WORKDIR)/.dir
 	$(call gb_Output_announce,fontconfig cache,$(true),FCC,2)
 	mkdir -p $(emscripten_fontconfig_cache_dir)
-	FONTCONFIG_FILE=$(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/fonts.conf fc-cache -f -s -v $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fonts
+	mkdir -p /instdir/share/fontconfig/cache
+	FONTCONFIG_FILE=$(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/fonts.conf fc-cache -f -s -v $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fonts || true
+	-cp /instdir/share/fontconfig/cache/* $(emscripten_fontconfig_cache_dir)/ 2>/dev/null || true
 	@echo "Fontconfig cache generated. Verifying..."
 	@ls -la $(emscripten_fontconfig_cache_dir)/ || echo "Warning: cache directory may be empty"
 	touch $@

@@ -1778,10 +1778,10 @@ emscripten_fs_image_WORKDIR := $(gb_CustomTarget_workdir)/static/emscripten_fs_i
 # Generate fontconfig cache before packaging soffice.data
 # This avoids runtime font scanning which causes many FS open calls
 #
-# fontconfig is built with paths like /share/fonts (without /instdir prefix).
-# fc-cache uses -y $(INSTROOT) as sysroot, so /share/fonts resolves to $(INSTROOT)/share/fonts.
-# Cache files store paths as /share/fonts/... which at runtime, with FcConfigSetSysRoot("/instdir"),
-# resolve to /instdir/share/fonts/...
+# fontconfig is built with absolute /instdir paths (e.g. /instdir/share/fonts).
+# fc-cache scans fonts at these paths and stores absolute paths in the cache.
+# At runtime, LibreOffice uses the same /instdir paths, so everything matches.
+# No sysroot is used - all paths are absolute.
 emscripten_fontconfig_cache_dir := $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/cache
 emscripten_fontconfig_cache_stamp := $(emscripten_fs_image_WORKDIR)/fontconfig_cache.stamp
 
@@ -1791,7 +1791,7 @@ $(emscripten_fontconfig_cache_stamp): \
 		| $(emscripten_fs_image_WORKDIR)/.dir
 	$(call gb_Output_announce,fontconfig cache,$(true),FCC,2)
 	mkdir -p $(emscripten_fontconfig_cache_dir)
-	fc-cache -f -s -v -y $(INSTROOT)
+	FONTCONFIG_FILE=$(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/fonts.conf fc-cache -f -s -v $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fonts
 	@echo "Fontconfig cache generated. Verifying..."
 	@ls -la $(emscripten_fontconfig_cache_dir)/ || echo "Warning: cache directory may be empty"
 	touch $@

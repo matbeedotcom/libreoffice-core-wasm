@@ -184,27 +184,23 @@ FontCfgWrapper::FontCfgWrapper()
     : m_pFontSet(nullptr)
     , m_bRestrictFontSetToApplicationFonts(false)
 {
-#ifdef __EMSCRIPTEN__
-    // For WASM builds, fontconfig is configured with paths like /share/fonts.
-    // Set sysroot to /instdir so these paths resolve to /instdir/share/fonts
-    // which matches the WASM virtual filesystem layout.
-    SAL_INFO("vcl.fonts", "EMSCRIPTEN: Setting fontconfig sysroot to /instdir");
-    FcConfigSetSysRoot(nullptr, reinterpret_cast<const FcChar8*>("/instdir"));
-#endif
     FcInit();
 #ifdef __EMSCRIPTEN__
+    // For WASM builds, fontconfig is configured with absolute /instdir paths.
+    // No sysroot is used - all paths are absolute to match the WASM filesystem.
     FcConfig* pConfig = FcConfigGetCurrent();
     if (pConfig)
     {
-        FcStrList* pDirs = FcConfigGetFontDirs(pConfig);
-        if (pDirs)
+        SAL_INFO("vcl.fonts", "EMSCRIPTEN: Adding font directories");
+        const char* fontDirs[] = {
+            "/instdir/share/fonts/truetype",
+            "/instdir/share/fonts",
+            nullptr
+        };
+        for (const char** dir = fontDirs; *dir != nullptr; ++dir)
         {
-            FcChar8* pDir;
-            while ((pDir = FcStrListNext(pDirs)) != nullptr)
-            {
-                SAL_INFO("vcl.fonts", "EMSCRIPTEN: Font dir: " << reinterpret_cast<const char*>(pDir));
-            }
-            FcStrListDone(pDirs);
+            SAL_INFO("vcl.fonts", "EMSCRIPTEN: Adding font dir: " << *dir);
+            FcConfigAppFontAddDir(pConfig, reinterpret_cast<const FcChar8*>(*dir));
         }
     }
 #endif

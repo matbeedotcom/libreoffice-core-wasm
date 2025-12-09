@@ -199,3 +199,7 @@ gdbtrace.log
 
 # xml unit tests sometimes leave these lying around
 **/secmod.db
+
+# Generated config files
+config_build.mk
+config_host.mk

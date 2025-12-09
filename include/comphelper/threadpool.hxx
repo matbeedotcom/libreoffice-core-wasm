@@ -72,9 +72,6 @@ public:
     /// join all threads if there are no tasks presently.
     void        joinThreadsIfIdle();
 
-    /// pre-spawn all worker threads to avoid runtime thread creation
-    void        preSpawnWorkers();
-
     /// return true if there are no queued or worked-on tasks
     bool        isIdle() const { return maTasks.empty() && mnBusyWorkers == 0; };
 

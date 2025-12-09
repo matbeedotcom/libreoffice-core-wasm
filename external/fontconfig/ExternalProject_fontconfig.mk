@@ -43,9 +43,9 @@ $(call gb_ExternalProject_get_state_target,fontconfig,build) :
 			) \
 			$(if $(filter EMSCRIPTEN,$(OS)), \
 				--disable-shared \
-			    --with-baseconfigdir=/share/fontconfig \
-			    --with-cache-dir=/share/fontconfig/cache \
-			    --with-add-fonts=/share/fonts \
+			    --with-baseconfigdir=/instdir/share/fontconfig \
+			    --with-cache-dir=/instdir/share/fontconfig/cache \
+			    --with-add-fonts=/instdir/share/fonts \
 			    --enable-libxml2 \
 			    ac_cv_func_fstatfs=no ac_cv_func_fstatvfs=no \
 			) \

@@ -185,25 +185,6 @@ FontCfgWrapper::FontCfgWrapper()
     , m_bRestrictFontSetToApplicationFonts(false)
 {
     FcInit();
-#ifdef __EMSCRIPTEN__
-    // For WASM builds, fontconfig is configured with /share paths (no /instdir prefix).
-    // The WASM virtual filesystem mounts instdir contents at root, so /share/fonts exists.
-    FcConfig* pConfig = FcConfigGetCurrent();
-    if (pConfig)
-    {
-        SAL_INFO("vcl.fonts", "EMSCRIPTEN: Adding font directories");
-        const char* fontDirs[] = {
-            "/share/fonts/truetype",
-            "/share/fonts",
-            nullptr
-        };
-        for (const char** dir = fontDirs; *dir != nullptr; ++dir)
-        {
-            SAL_INFO("vcl.fonts", "EMSCRIPTEN: Adding font dir: " << *dir);
-            FcConfigAppFontAddDir(pConfig, reinterpret_cast<const FcChar8*>(*dir));
-        }
-    }
-#endif
 }
 
 #ifndef FC_FONT_WRAPPER

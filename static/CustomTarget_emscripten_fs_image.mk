@@ -1775,28 +1775,6 @@ gb_emscripten_fs_image_filelists += $(call gb_Package_get_target,fontconfig_data
 
 emscripten_fs_image_WORKDIR := $(gb_CustomTarget_workdir)/static/emscripten_fs_image
 
-# Generate fontconfig cache before packaging soffice.data
-# This avoids runtime font scanning which causes many FS open calls
-#
-# fontconfig is built with /share paths (no /instdir prefix) to match
-# how the WASM virtual filesystem mounts files (instdir contents at root).
-# fc-cache scans fonts and stores paths in the cache.
-emscripten_fontconfig_cache_dir := $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/cache
-emscripten_fontconfig_cache_stamp := $(emscripten_fs_image_WORKDIR)/fontconfig_cache.stamp
-
-$(emscripten_fontconfig_cache_stamp): \
-		$(call gb_AutoInstall_get_target,ooo_fonts) \
-		$(call gb_Package_get_target,fontconfig_data) \
-		| $(emscripten_fs_image_WORKDIR)/.dir
-	$(call gb_Output_announce,fontconfig cache,$(true),FCC,2)
-	mkdir -p $(emscripten_fontconfig_cache_dir)
-	mkdir -p /share/fontconfig/cache
-	FONTCONFIG_FILE=$(INSTROOT)/$(LIBO_SHARE_FOLDER)/fontconfig/fonts.conf fc-cache -f -s -v $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fonts || true
-	-cp /share/fontconfig/cache/* $(emscripten_fontconfig_cache_dir)/ 2>/dev/null || true
-	@echo "Fontconfig cache generated. Verifying..."
-	@ls -la $(emscripten_fontconfig_cache_dir)/ || echo "Warning: cache directory may be empty"
-	touch $@
-
 # we just need data.js.link at link time, which is equal to soffice.data.js
 $(call gb_CustomTarget_get_target,static/emscripten_fs_image): \
     $(emscripten_fs_image_WORKDIR)/soffice.data \
@@ -1823,12 +1801,10 @@ $(emscripten_fs_image_WORKDIR)/soffice.data.filelist: \
 		$(call gb_InstallModule_get_target,scp2/ooo) \
 		$(emscripten_fs_image_WORKDIR)/soffice.data.concat_lists \
 		$(gb_emscripten_fs_image_files) \
-		$(emscripten_fontconfig_cache_stamp) \
 		| $(emscripten_fs_image_WORKDIR)/.dir
 	$(file >$@,\
 	    $(subst @,@@,$(subst $(BUILDDIR)/,,$(filter $(BUILDDIR)%,$(gb_emscripten_fs_image_all_files)))) \
-	    $(foreach item,$(filter-out $(BUILDDIR)%,$(gb_emscripten_fs_image_all_files)),$(subst @,@@,$(item))@$(subst @,@@,$(subst $(SRCDIR)/,,$(item)))) \
-	    $(foreach cache_file,$(wildcard $(emscripten_fontconfig_cache_dir)/*),$(subst @,@@,$(cache_file))@instdir/$(subst @,@@,$(subst $(INSTROOT)/,,$(cache_file)))))
+	    $(foreach item,$(filter-out $(BUILDDIR)%,$(gb_emscripten_fs_image_all_files)),$(subst @,@@,$(item))@$(subst @,@@,$(subst $(SRCDIR)/,,$(item)))))
 
 # Unfortunately the file packager just allows a cmdline file list, but all paths are
 # relative to $(BUILDDIR), so we won't run out of cmdline space that fast...

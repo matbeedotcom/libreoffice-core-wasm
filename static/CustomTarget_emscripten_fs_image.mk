@@ -1159,9 +1159,6 @@ gb_emscripten_fs_image_files += \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/config/wizard/form/styles/violet.css \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/config/wizard/form/styles/water.css \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/fonts/truetype/fc_local.conf \
-    $(INSTROOT)/$(LIBO_SHARE_FOLDER)/gallery/fontwork.sdg \
-    $(INSTROOT)/$(LIBO_SHARE_FOLDER)/gallery/fontwork.sdv \
-    $(INSTROOT)/$(LIBO_SHARE_FOLDER)/gallery/fontwork.thm \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/registry/cjk.xcd \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/registry/ctlseqcheck.xcd \
     $(INSTROOT)/$(LIBO_SHARE_FOLDER)/registry/ctl.xcd \
@@ -1186,8 +1183,6 @@ gb_emscripten_fs_image_files += \
     $(INSTROOT)/$(LIBO_SHARE_PRESETS_FOLDER)/basic/Standard/Module1.xba \
     $(INSTROOT)/$(LIBO_SHARE_PRESETS_FOLDER)/basic/Standard/script.xlb \
     $(INSTROOT)/$(LIBO_SHARE_PRESETS_FOLDER)/config/autotbl.fmt \
-    $(INSTROOT)/$(LIBO_SHARE_PRESETS_FOLDER)/gallery/sg30.sdv \
-    $(INSTROOT)/$(LIBO_SHARE_PRESETS_FOLDER)/gallery/sg30.thm \
     $(INSTROOT)/$(LIBO_SHARE_RESOURCE_FOLDER)/common/fonts/opens___.ttf \
     $(INSTROOT)/$(LIBO_URE_ETC_FOLDER)/$(call gb_Helper_get_rcfile,uno) \
     $(INSTROOT)/$(LIBO_URE_MISC_FOLDER)/services.rdb \

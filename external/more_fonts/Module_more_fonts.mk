@@ -19,7 +19,7 @@ $(eval $(call gb_Module_add_targets,more_fonts,\
 	ExternalPackage_gentium \
 	ExternalPackage_liberation \
 	ExternalPackage_liberation_narrow \
-	ExternalPackage_libertineg \
+	$(if $(filter EMSCRIPTEN,$(OS)),,ExternalPackage_libertineg) \
 	ExternalPackage_libre_hebrew \
 	ExternalPackage_noto_kufi_arabic \
 	ExternalPackage_noto_naskh_arabic \
@@ -46,7 +46,7 @@ $(eval $(call gb_Module_add_targets,more_fonts,\
 	UnpackedTarball_gentium \
 	UnpackedTarball_liberation \
 	UnpackedTarball_liberation_narrow \
-	UnpackedTarball_libertineg \
+	$(if $(filter EMSCRIPTEN,$(OS)),,UnpackedTarball_libertineg) \
 	UnpackedTarball_libre_hebrew \
 	UnpackedTarball_noto_kufi_arabic \
 	UnpackedTarball_noto_naskh_arabic \

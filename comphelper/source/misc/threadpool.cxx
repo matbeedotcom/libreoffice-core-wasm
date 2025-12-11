@@ -305,24 +305,6 @@ void ThreadPool::joinThreadsIfIdle()
     }
 }
 
-void ThreadPool::preSpawnWorkers()
-{
-    std::scoped_lock< std::mutex > aGuard( maMutex );
-
-    SAL_INFO("comphelper.threadpool", "preSpawnWorkers: spawning " << mnMaxWorkers << " workers");
-
-    mbTerminate = false;
-
-    // Spawn all workers up to the maximum
-    while (maWorkers.size() < mnMaxWorkers)
-    {
-        maWorkers.push_back( new ThreadWorker( this ) );
-        maWorkers.back()->launch();
-    }
-
-    SAL_INFO("comphelper.threadpool", "preSpawnWorkers: spawned " << maWorkers.size() << " workers");
-}
-
 std::shared_ptr<ThreadTaskTag> ThreadPool::createThreadTaskTag()
 {
     return std::make_shared<ThreadTaskTag>();

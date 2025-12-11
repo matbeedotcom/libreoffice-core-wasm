@@ -335,6 +335,8 @@ void importSheetFragments( WorkbookFragment& rWorkbookHandler, SheetFragmentVect
         // This is a much more controlled re-enterancy hazard than
         // allowing a yield deeper inside the filter code for progress
         // bar updating.
+        // Release SolarMutex so worker threads can acquire it and make progress.
+        SolarMutexReleaser releaser;
         Application::Yield();
     }
     rSharedPool.waitUntilDone(pTag);

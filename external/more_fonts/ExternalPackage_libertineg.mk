@@ -7,6 +7,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+# Skip Libertine/Biolinum fonts for WASM builds (saves ~19MB)
+ifneq ($(filter EMSCRIPTEN,$(OS)),)
+$(eval $(call gb_ExternalPackage_ExternalPackage,fonts_libertineg,font_libertineg))
+else
+
 $(eval $(call gb_ExternalPackage_ExternalPackage,fonts_libertineg,font_libertineg))
 
 $(eval $(call gb_ExternalPackage_add_unpacked_files,fonts_libertineg,$(LIBO_SHARE_FOLDER)/fonts/truetype,\
@@ -21,5 +26,7 @@ $(eval $(call gb_ExternalPackage_add_unpacked_files,fonts_libertineg,$(LIBO_SHAR
 	LinLibertine_RZ_G.ttf \
 	LinLibertine_R_G.ttf \
 ))
+
+endif
 
 # vim: set noet sw=4 ts=4:

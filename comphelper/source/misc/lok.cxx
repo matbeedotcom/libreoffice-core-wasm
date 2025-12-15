@@ -324,6 +324,76 @@ void statusIndicatorFinish()
         pStatusIndicatorCallback(pStatusIndicatorCallbackData, statusIndicatorCallbackType::Finish, 0, nullptr);
 }
 
+// Helper to get current time in milliseconds since epoch
+static int64_t getCurrentTimeMs()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+void setCurrentOperation(OperationType type)
+{
+    g_eCurrentOperation.store(static_cast<int>(type), std::memory_order_relaxed);
+    if (type != OperationType::None)
+    {
+        // Reset abort flag when starting a new operation
+        g_bAbortOperation.store(false, std::memory_order_relaxed);
+        // Set deadline if timeout is configured
+        int timeoutMs = g_nOperationTimeoutMs.load(std::memory_order_relaxed);
+        if (timeoutMs > 0)
+        {
+            g_nOperationDeadlineMs.store(getCurrentTimeMs() + timeoutMs, std::memory_order_relaxed);
+        }
+        else
+        {
+            g_nOperationDeadlineMs.store(0, std::memory_order_relaxed);
+        }
+    }
+}
+
+OperationType getCurrentOperation()
+{
+    return static_cast<OperationType>(g_eCurrentOperation.load(std::memory_order_relaxed));
+}
+
+void setAbortOperation(bool bAbort)
+{
+    g_bAbortOperation.store(bAbort, std::memory_order_relaxed);
+    SAL_INFO("comphelper.lok", "setAbortOperation: " << bAbort);
+}
+
+bool isAbortOperation()
+{
+    return g_bAbortOperation.load(std::memory_order_relaxed);
+}
+
+void resetAbortOperation()
+{
+    g_bAbortOperation.store(false, std::memory_order_relaxed);
+    g_eCurrentOperation.store(static_cast<int>(OperationType::None), std::memory_order_relaxed);
+    g_nOperationDeadlineMs.store(0, std::memory_order_relaxed);
+}
+
+void setOperationTimeout(int timeoutMs)
+{
+    g_nOperationTimeoutMs.store(timeoutMs, std::memory_order_relaxed);
+    SAL_INFO("comphelper.lok", "setOperationTimeout: " << timeoutMs << "ms");
+}
+
+bool isOperationTimedOut()
+{
+    int64_t deadlineMs = g_nOperationDeadlineMs.load(std::memory_order_relaxed);
+    if (deadlineMs <= 0)
+        return false;
+
+    return getCurrentTimeMs() >= deadlineMs;
+}
+
+bool shouldAbortOperation()
+{
+    return isAbortOperation() || isOperationTimedOut();
+}
+
 } // namespace
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

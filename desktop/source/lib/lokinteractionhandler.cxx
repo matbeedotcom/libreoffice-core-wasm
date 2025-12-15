@@ -19,6 +19,7 @@
 
 #include "lokinteractionhandler.hxx"
 
+#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -412,6 +413,23 @@ sal_Bool SAL_CALL LOKInteractionHandler::handleInteractionRequest(
 {
     uno::Sequence<uno::Reference<task::XInteractionContinuation>> const &rContinuations = xRequest->getContinuations();
     uno::Any const request(xRequest->getRequest());
+
+    // Check for abort request - select XInteractionAbort if available
+    if (comphelper::LibreOfficeKit::shouldAbortOperation())
+    {
+        SAL_INFO("lok", "handleInteractionRequest: abort requested");
+        for (auto const & cont : rContinuations)
+        {
+            uno::Reference<task::XInteractionAbort> xAbort(cont, uno::UNO_QUERY);
+            if (xAbort.is())
+            {
+                xAbort->select();
+                return true;
+            }
+        }
+        // No abort continuation available, continue with normal handling
+        // but the operation will likely fail at the next checkpoint
+    }
 
     if (handleIOException(rContinuations, request))
         return true;

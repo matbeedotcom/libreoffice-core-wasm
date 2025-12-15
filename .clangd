@@ -1,0 +1,39 @@
+CompileFlags:
+  Add:
+    # Target wasm32 to match Emscripten's type sizes
+    - --target=wasm32-unknown-emscripten
+    
+    # Emscripten defines
+    - -DEMSCRIPTEN
+    - -D__EMSCRIPTEN__
+    - -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
+    
+    # LibreOffice-specific defines
+    - -DLIBO_INTERNAL_ONLY
+    - -DSAL_LOG_INFO
+    - -DSAL_LOG_WARN
+    
+    # Force libc++ instead of libstdc++
+    - -stdlib=libc++
+    
+    # Emscripten libc++ headers (must come first) - relative to project root
+    - -isystem../emsdk/upstream/emscripten/cache/sysroot/include/c++/v1
+    - -isystem../emsdk/upstream/emscripten/cache/sysroot/include
+    
+    # LibreOffice main include path
+    - -Iinclude
+    
+    # Generated config headers
+    - -Iconfig_host
+    
+    # UNO API headers (comprehensive has more headers than normal)
+    - -Iworkdir/UnoApiHeadersTarget/udkapi/comprehensive
+    - -Iworkdir/UnoApiHeadersTarget/offapi/comprehensive
+    - -Iworkdir/UnoApiHeadersTarget/oovbaapi/comprehensive
+    
+    # C++ standard
+    - -std=c++20
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

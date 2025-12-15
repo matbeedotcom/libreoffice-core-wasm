@@ -51,6 +51,7 @@
 #endif
 
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <iostream>
 #include <string_view>
@@ -9665,6 +9666,70 @@ void lok_flushCallbacks(LibreOfficeKitDocument* pDoc)
 
     fprintf(stderr, "[LOK C++] lok_flushCallbacks: flushed %d callback handlers\n", flushedCount);
     fflush(stderr);
+}
+
+// Operation abort API for WASM
+SAL_JNI_EXPORT
+void lok_abortOperation()
+{
+    SAL_INFO("lok.shim", "lok_abortOperation called");
+    fprintf(stderr, "[LOK C++] lok_abortOperation\n");
+    fflush(stderr);
+    comphelper::LibreOfficeKit::setAbortOperation(true);
+}
+
+SAL_JNI_EXPORT
+void lok_setOperationTimeout(int timeoutMs)
+{
+    SAL_INFO("lok.shim", "lok_setOperationTimeout: " << timeoutMs << "ms");
+    fprintf(stderr, "[LOK C++] lok_setOperationTimeout(%d)\n", timeoutMs);
+    fflush(stderr);
+    comphelper::LibreOfficeKit::setOperationTimeout(timeoutMs);
+}
+
+SAL_JNI_EXPORT
+const char* lok_getOperationState()
+{
+    static thread_local char sState[16];
+
+    if (comphelper::LibreOfficeKit::isAbortOperation())
+    {
+        strcpy(sState, "aborted");
+    }
+    else if (comphelper::LibreOfficeKit::isOperationTimedOut())
+    {
+        strcpy(sState, "timedout");
+    }
+    else
+    {
+        switch (comphelper::LibreOfficeKit::getCurrentOperation())
+        {
+            case comphelper::LibreOfficeKit::OperationType::None:
+                strcpy(sState, "none");
+                break;
+            case comphelper::LibreOfficeKit::OperationType::Load:
+                strcpy(sState, "load");
+                break;
+            case comphelper::LibreOfficeKit::OperationType::Save:
+                strcpy(sState, "save");
+                break;
+            case comphelper::LibreOfficeKit::OperationType::Export:
+                strcpy(sState, "export");
+                break;
+        }
+    }
+
+    SAL_INFO("lok.shim", "lok_getOperationState: " << sState);
+    return sState;
+}
+
+SAL_JNI_EXPORT
+void lok_resetAbort()
+{
+    SAL_INFO("lok.shim", "lok_resetAbort called");
+    fprintf(stderr, "[LOK C++] lok_resetAbort\n");
+    fflush(stderr);
+    comphelper::LibreOfficeKit::resetAbortOperation();
 }
 
 } // extern "C"

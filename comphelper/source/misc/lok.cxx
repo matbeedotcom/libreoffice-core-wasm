@@ -12,6 +12,9 @@
 #include <i18nlangtag/languagetag.hxx>
 #include <sal/log.hxx>
 
+#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <iostream>
 
 namespace comphelper::LibreOfficeKit
@@ -34,6 +37,12 @@ static bool g_bRangeHeaders(false);
 static bool g_bViewIdForVisCursorInvalidation(false);
 
 static bool g_bLocalRendering(false);
+
+// Operation abort state (atomic for thread safety with Web Workers)
+static std::atomic<int> g_eCurrentOperation{0}; // OperationType as int
+static std::atomic<bool> g_bAbortOperation{false};
+static std::atomic<int> g_nOperationTimeoutMs{0};
+static std::atomic<int64_t> g_nOperationDeadlineMs{0}; // milliseconds since epoch
 
 static Compat g_eCompatFlags(Compat::none);
 

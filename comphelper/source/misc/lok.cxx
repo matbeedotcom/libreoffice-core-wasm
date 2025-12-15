@@ -8,6 +8,7 @@
  */
 
 #include <comphelper/lok.hxx>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <osl/process.h>
 #include <i18nlangtag/languagetag.hxx>
 #include <sal/log.hxx>
@@ -314,6 +315,15 @@ void statusIndicatorStart(const OUString& sText)
 
 void statusIndicatorSetValue(int percent)
 {
+    // Check for abort/timeout before processing
+    if (shouldAbortOperation())
+    {
+        SAL_INFO("comphelper.lok", "statusIndicatorSetValue: abort requested, throwing exception");
+        throw css::util::CloseVetoException(
+            u"Operation aborted"_ustr,
+            css::uno::Reference<css::uno::XInterface>());
+    }
+
     if (pStatusIndicatorCallback)
         pStatusIndicatorCallback(pStatusIndicatorCallbackData, statusIndicatorCallbackType::SetValue, percent, nullptr);
 }

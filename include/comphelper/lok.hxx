@@ -42,6 +42,34 @@ enum class statusIndicatorCallbackType
     Finish
 };
 
+/// Type of long-running operation for abort tracking
+enum class OperationType
+{
+    None,
+    Load,
+    Save,
+    Export
+};
+
+/// Set the current operation type (called at operation start)
+COMPHELPER_DLLPUBLIC void setCurrentOperation(OperationType type);
+/// Get the current operation type
+COMPHELPER_DLLPUBLIC OperationType getCurrentOperation();
+
+/// Request abort of current operation (can be called from any thread)
+COMPHELPER_DLLPUBLIC void setAbortOperation(bool bAbort);
+/// Check if abort was requested
+COMPHELPER_DLLPUBLIC bool isAbortOperation();
+/// Reset abort flag (called at operation boundaries)
+COMPHELPER_DLLPUBLIC void resetAbortOperation();
+
+/// Set operation timeout in milliseconds (0 = no timeout)
+COMPHELPER_DLLPUBLIC void setOperationTimeout(int timeoutMs);
+/// Check if operation has timed out
+COMPHELPER_DLLPUBLIC bool isOperationTimedOut();
+/// Check if operation should abort (either explicit abort or timeout)
+COMPHELPER_DLLPUBLIC bool shouldAbortOperation();
+
 COMPHELPER_DLLPUBLIC void setStatusIndicatorCallback(
     void (*callback)(void* data, statusIndicatorCallbackType type, int percent, const char* pText),
     void* data);

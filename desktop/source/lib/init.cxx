@@ -106,6 +106,7 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/URLTransformer.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
@@ -2655,6 +2656,13 @@ static LibreOfficeKitDocument* lo_documentLoadWithOptions(LibreOfficeKit* pThis,
 
     SolarMutexGuard aGuard;
 
+    // Set operation type and prepare for potential abort
+    comphelper::LibreOfficeKit::setCurrentOperation(
+        comphelper::LibreOfficeKit::OperationType::Load);
+    comphelper::ScopeGuard operationCleanup([&]() {
+        comphelper::LibreOfficeKit::resetAbortOperation();
+    });
+
     static int nDocumentIdCounter = 0;
 
     LibLibreOffice_Impl* pLib = static_cast<LibLibreOffice_Impl*>(pThis);
@@ -2916,6 +2924,17 @@ static LibreOfficeKitDocument* lo_documentLoadWithOptions(LibreOfficeKit* pThis,
         }
 
         return pDocument;
+    }
+    catch (const css::util::CloseVetoException&)
+    {
+        if (comphelper::LibreOfficeKit::isAbortOperation())
+            pLib->maLastExceptionMsg = u"Operation aborted by user"_ustr;
+        else if (comphelper::LibreOfficeKit::isOperationTimedOut())
+            pLib->maLastExceptionMsg = u"Operation timed out"_ustr;
+        else
+            pLib->maLastExceptionMsg = u"Operation aborted"_ustr;
+        SAL_INFO("lok", "Document load aborted: " << pLib->maLastExceptionMsg);
+        return nullptr;
     }
     catch (const uno::Exception& exception)
     {

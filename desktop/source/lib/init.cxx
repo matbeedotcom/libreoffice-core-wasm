@@ -3418,6 +3418,13 @@ static int doc_saveAs(LibreOfficeKitDocument* pThis, const char* sUrl, const cha
     SolarMutexGuard aGuard;
     SetLastExceptionMsg();
 
+    // Set operation type and prepare for potential abort
+    comphelper::LibreOfficeKit::setCurrentOperation(
+        comphelper::LibreOfficeKit::OperationType::Save);
+    comphelper::ScopeGuard operationCleanup([&]() {
+        comphelper::LibreOfficeKit::resetAbortOperation();
+    });
+
     LibLODocument_Impl* pDocument = static_cast<LibLODocument_Impl*>(pThis);
 
     OUString sFormat = getUString(pFormat);
@@ -3635,6 +3642,17 @@ static int doc_saveAs(LibreOfficeKitDocument* pThis, const char* sUrl, const cha
             xStorable->storeToURL(aURL, aSaveMediaDescriptor.getAsConstPropertyValueList());
 
         return true;
+    }
+    catch (const css::util::CloseVetoException&)
+    {
+        if (comphelper::LibreOfficeKit::isAbortOperation())
+            SetLastExceptionMsg(u"Operation aborted by user"_ustr);
+        else if (comphelper::LibreOfficeKit::isOperationTimedOut())
+            SetLastExceptionMsg(u"Operation timed out"_ustr);
+        else
+            SetLastExceptionMsg(u"Operation aborted"_ustr);
+        SAL_INFO("lok", "Document save aborted");
+        return false;
     }
     catch (const uno::Exception& exception)
     {

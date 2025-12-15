@@ -31,6 +31,19 @@ CompileFlags:
     - -Iworkdir/UnoApiHeadersTarget/offapi/comprehensive
     - -Iworkdir/UnoApiHeadersTarget/oovbaapi/comprehensive
     
+    # Generated officecfg headers
+    - -Iworkdir/CustomTarget/officecfg/registry
+    
+    # External libraries
+    - -Iexternal/boost/include
+    - -Iworkdir/UnpackedTarball/boost
+    - -Iworkdir/UnpackedTarball/icu/source/common
+    - -Iworkdir/UnpackedTarball/icu/source/i18n
+    
+    # Module include directories
+    - -Idesktop/inc
+    - -Idesktop/source/lib
+    
     # C++ standard
     - -std=c++20
 
